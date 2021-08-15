@@ -6,7 +6,7 @@ Blah blah blah—*use at your own risk*.
 
 **Usage:**  
 
-`python random_youtube.py <username=sent username> <playlist=youtube playlist ID> <channel= youtube channel URL> [webhook=webhook URL]`  
+`python random_youtube.py <username=sent username> <playlist=youtube playlist ID> <channel=youtube channel URL> [webhook=webhook URL]`  
 > username, channel, and playlist can be specified multiple times  
 > must include either channel or playlist options and must have a webhook  
 
