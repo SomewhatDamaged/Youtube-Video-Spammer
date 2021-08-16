@@ -91,11 +91,11 @@ def main():
     for playlistID in playlistIDs:
         video_ids += get_videos(playlistID)
     if video_ids:
-        video_id = video_ids[random.randint(0, len(video_ids) - 1)]
+        video_id = random.choice(video_ids)
     if video_id:
         username = None
         if usernames:
-            username = usernames[random.randint(0, len(usernames) - 1)]
+            username = random.choice(usernames)
         send_webhook(f"https://youtu.be/{video_id}", webhook, username)
 
 
