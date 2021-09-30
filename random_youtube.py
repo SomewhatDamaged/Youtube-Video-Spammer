@@ -76,6 +76,7 @@ def main():
     usernames = []
     history = ""
     history_data = None
+    video_id = None
     try:
         for arg in sys.argv:
             if arg.endswith(".py"):
@@ -128,7 +129,7 @@ def main():
             video_ids = limited_video_ids
     if video_ids:
         video_id = random.choice(video_ids)
-    if video_id:
+    if video_id is not None:
         if history_data is not None:
             history_data.append(video_id)
             write_history(history, history_data)
