@@ -155,7 +155,6 @@ def main():
     video_ids = []
     if history:
         history_data = read_history(history)
-        print(f"History: {history_data}")
     for channel in channels:
         playlistID = process_playlistID(channel)
         try:
@@ -171,7 +170,6 @@ def main():
         video_ids += get_videos(playlistID)
     if history_data is not None:
         limited_video_ids = [vid for vid in video_ids if vid not in history_data]
-        print(f"Remaining videos: {limited_video_ids}")
         if not limited_video_ids:
             write_history(history, [])
             history_data = []
