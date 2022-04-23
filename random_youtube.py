@@ -38,20 +38,66 @@ def get_videos(playlistID):
     return output_ids
 
 
+def resolve_channelID(username):
+    assert username, f"username is {username}"
+    url = f"https://youtube.googleapis.com/youtube/v3/search?part=snippet&q={username}&type=channel&key={api_key}"
+    headers = {
+        "Accept": "application/json",
+    }
+    results = requests.get(url, headers=headers)
+    results = results.json()
+    if results:
+        for channelData in results["items"]:
+            try:
+                return channelData["id"]["channelId"]
+            except:  # noqa: E722
+                continue
+    return None
+
+
+def process_playlistID(channel):
+    assert channel, f"channel is {channel}"
+    channelID = re.fullmatch(r"https:\/\/(?:www\.)?youtube\.com\/(?:(user|c)|channel)\/(?(1)(?P<user>.+)|(?P<channel>.+))", channel)
+    assert channelID is not None, f"{channel} did not match any existing Youtube channel URLs /o\\"
+    if not channelID.group("channel"):
+        channelID = resolve_channelID(channelID.group("user"))
+    assert channelID is not None, f"{channel} did not match any existing Youtube channel URLs /o\\"
+    return get_channel_playlistID(channelID)
+
+
 def send_webhook(text, webhook_url, username):
     assert text, f"text is {text}"
     assert webhook_url, f"webhook_url is {webhook_url}"
     requests.post(webhook_url, data={"content": text, "username": username})
 
 
-def get_channel_playlistID(channel):
-    assert channel, f"channel is {channel}"
-    url = f"{channel}/videos"
-    results = requests.get(url)
-    rex = re.search(
-        r"\"watchPlaylistEndpoint\":{\"playlistId\":\"([^\"]+)\"", results.text
-    )
-    return rex.group(1)
+def get_channel_playlistID(channelID):
+    print(f"channelID = {channelID}")
+    assert channelID, f"channel is {channelID}"
+    url = f"https://youtube.googleapis.com/youtube/v3/channels?part=contentDetails&id={channelID}&key={api_key}"
+    headers = {
+        "Accept": "application/json",
+    }
+    pageToken = ""
+    while True:
+        if pageToken:
+            results = requests.get(url + f"&pageToken={pageToken}", headers=headers)
+        else:
+            results = requests.get(url, headers=headers)
+        results = results.json()
+        if results:
+            for playlistData in results["items"]:
+                try:
+                    return playlistData["contentDetails"]["relatedPlaylists"]["uploads"]
+                except:  # noqa: E722
+                    continue
+            if "nextPageToken" in results:
+                pageToken = results["nextPageToken"]
+            else:
+                break
+        else:
+            break
+    return None
 
 
 def read_history(path):
@@ -111,8 +157,12 @@ def main():
         history_data = read_history(history)
         print(f"History: {history_data}")
     for channel in channels:
+        playlistID = process_playlistID(channel)
         try:
-            playlistIDs.append(get_channel_playlistID(channel))
+            if playlistID is not None:
+                playlistIDs.append(playlistID)
+            else:
+                print(f"Warning: Channel {channel} has no videos! O.O")
         except:  # noqa: E722
             return print(
                 f"Your channel URL is broken.\nThis one: {channel}\nShould be of the form: https://www.youtube.com/user/smbctheater or https://www.youtube.com/channel/UC13angEs6J09darNmisoRng"
