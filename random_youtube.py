@@ -114,6 +114,26 @@ def write_history(path, data):
         json.dump(data, outfile, indent=4, ensure_ascii=False)
 
 
+def add_tickets(ticket_name, number_of_tickets, lottery):
+    number_of_tickets = max(number_of_tickets, 1)
+    lottery.extend([ticket_name for _ in range(number_of_tickets)])
+    return lottery
+
+
+def process_ticket(ticket_name, lottery):
+    if "|" in ticket_name:
+        add_tickets(ticket_name.rsplit("|", 1)[0], int(ticket_name.rsplit("|", 1)[1]), lottery)
+    else:
+        lottery.append(ticket_name)
+
+
+def build_lottery(lottery_in):
+    lottery_out = []
+    for ticket_name in lottery_in:
+        process_ticket(ticket_name, lottery_out)
+    return lottery_out
+
+
 def main():
     random.seed()
     channels = []
@@ -155,6 +175,7 @@ def main():
     video_ids = []
     if history:
         history_data = read_history(history)
+        print(f"History: {history_data}")
     for channel in channels:
         playlistID = process_playlistID(channel)
         try:
@@ -170,12 +191,14 @@ def main():
         video_ids += get_videos(playlistID)
     if history_data is not None:
         limited_video_ids = [vid for vid in video_ids if vid not in history_data]
+        print(f"Remaining videos: {limited_video_ids}")
         if not limited_video_ids:
             write_history(history, [])
             history_data = []
         else:
             video_ids = limited_video_ids
     if video_ids:
+        video_ids = [name for name in video_ids]
         video_id = random.choice(video_ids)
     if video_id is not None:
         if history_data is not None:
@@ -183,7 +206,7 @@ def main():
             write_history(history, history_data)
         username = None
         if usernames:
-            username = random.choice(usernames)
+            username = random.choice(build_lottery(usernames))
         send_webhook(f"https://youtu.be/{video_id}", webhook, username)
 
 
